@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- The board is entirely offline: its own origin serves every asset. This
+       kills outbound beacons from ballot-authored preview markup, whose
+       ordinary src/href URLs the sanitizer preserves by design. It does NOT
+       stop link navigation — sanitizeInto's anchor guard covers that half.
+
+       Three consequences of this policy, all deliberate:
+
+       - Remote images in preview_html are dead, with no placeholder
+         (sanitizeInto's withheld path only fires when the sanitizer returns
+         empty). That is the point: <img src="http://…"> IS the beacon.
+       - data: images render. `img-src 'self' data:` is a scheme-source, and it
+         is granted to images only — a self-contained data URI has nowhere to
+         phone, so an inline diagram in a preview costs nothing to allow.
+       - `style-src` falls back to `default-src 'self'`, which does not cover
+         inline style attributes. A style= inside ballot-authored preview markup
+         may therefore be dropped: previews can render un-styled, never
+         mis-wired. The board's own chrome carries no inline style at all — it
+         is styled entirely from /assets/styles.css, which loads same-origin.
+
+       The bootstrap is an external module for the same reason. CSP source
+       expressions match URLs, so 'self' cannot authorize an inline script no
+       matter its type="module"; inlining it would need 'unsafe-inline', which
+       is exactly the defence-in-depth this policy exists to keep. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:">
+  <title>Ballot</title>
+  <link rel="stylesheet" href="/assets/styles.css">
+</head>
+<body>
+  <main id="board"><p class="loading">Loading ballot…</p></main>
+  <script type="module" src="/assets/boot.mjs"></script>
+</body>
+</html>

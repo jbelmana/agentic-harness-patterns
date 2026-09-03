@@ -1,0 +1,192 @@
+/* Ballot board styling. One stylesheet, no build step, no external fonts and no
+   CDN — the board is served by an ephemeral loopback server and must render
+   correctly with the network otherwise unreachable.
+
+   Palette is tokens on :root for light, redefined wholesale under
+   prefers-color-scheme: dark. Every colour has its light definition first, so a
+   browser reporting no preference still gets a complete theme rather than a
+   half-painted one. Declarations are grouped several to a line deliberately:
+   this file is under the 200-line rule alongside the modules it styles. */
+
+:root {
+  --bg: #f6f7f9; --surface: #ffffff; --sunken: #eef0f4;
+  --text: #16181d; --muted: #5d6470; --line: #d8dce4;
+  --accent: #1f6feb; --accent-soft: #e6efff;
+  --high: #b3261e; --high-bg: #fdecea;
+  --med: #8a5a00; --med-bg: #fdf3e0;
+  --low: #4b5563; --low-bg: #eef0f4;
+  --danger: #b3261e; --radius: 10px;
+  --shadow: 0 1px 2px rgba(16, 20, 30, 0.08), 0 6px 16px rgba(16, 20, 30, 0.06);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14161a; --surface: #1c1f25; --sunken: #23272f;
+    --text: #e9ecf1; --muted: #a4acba; --line: #333945;
+    --accent: #6ea8ff; --accent-soft: #1d2a40;
+    --high: #ff9b93; --high-bg: #3a1d1b;
+    --med: #f0c274; --med-bg: #3a2d16;
+    --low: #b6bdc9; --low-bg: #262b33;
+    --danger: #ff9b93;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 16px rgba(0, 0, 0, 0.3);
+  }
+}
+
+* { box-sizing: border-box; }
+
+/* Author origin beats the UA stylesheet regardless of specificity, so the
+   `display: block` on .default-note below would cancel `hidden` and leave every
+   default's note textarea visible before it is challenged — where the input
+   handler silently discards what is typed into it. !important is what wins back
+   an author-vs-author fight; it also covers any later use of `hidden` here. */
+[hidden] { display: none !important; }
+
+body {
+  margin: 0; padding: 0 0 6rem;
+  background: var(--bg); color: var(--text);
+  font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+#board { max-width: 60rem; margin: 0 auto; padding: 2rem 1.25rem 0; }
+.loading { color: var(--muted); }
+
+.board-head { margin-bottom: 1.75rem; }
+.board-head .title { margin: 0 0 0.4rem; font-size: 1.6rem; letter-spacing: -0.01em; }
+.board-head .task { margin: 0 0 0.75rem; color: var(--muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+
+.chip {
+  padding: 0.15rem 0.55rem; border: 1px solid var(--line); border-radius: 999px;
+  background: var(--surface); color: var(--muted); font-size: 0.78rem;
+  text-transform: uppercase; letter-spacing: 0.04em;
+}
+
+.counts { margin: 0.75rem 0 0; color: var(--muted); font-size: 0.9rem; }
+.questions { display: grid; gap: 1rem; }
+
+.question {
+  padding: 1.1rem 1.15rem; border: 1px solid var(--line);
+  border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow);
+}
+
+.q-head { display: flex; flex-wrap: wrap; align-items: center; gap: 0.45rem; }
+
+.class-label {
+  color: var(--muted); font-size: 0.75rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.08em;
+}
+
+.blast {
+  padding: 0.1rem 0.5rem; border-radius: 999px; font-size: 0.72rem;
+  font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+}
+
+.blast-high { background: var(--high-bg); color: var(--high); }
+.blast-med { background: var(--med-bg); color: var(--med); }
+.blast-low { background: var(--low-bg); color: var(--low); }
+.multi-hint { color: var(--muted); font-size: 0.75rem; }
+.q-text { margin: 0.55rem 0 0.9rem; font-size: 1.1rem; line-height: 1.35; }
+
+.options { display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: 0.75rem; }
+
+.option {
+  display: block; width: 100%; margin: 0; padding: 0.85rem 0.9rem;
+  border: 1.5px solid var(--line); border-radius: var(--radius);
+  background: var(--sunken); color: inherit; font: inherit; text-align: left;
+  cursor: pointer; transition: border-color 0.12s ease, background 0.12s ease;
+}
+
+.option:hover { border-color: var(--accent); }
+.option:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.option.selected { border-color: var(--accent); background: var(--accent-soft); }
+.option-head { display: flex; align-items: baseline; gap: 0.5rem; }
+.option-label { font-weight: 600; }
+.option.selected .option-label::after { content: " ✓"; color: var(--accent); font-weight: 700; }
+
+.recommended {
+  margin-left: auto; padding: 0.08rem 0.45rem; border: 1px solid var(--accent);
+  border-radius: 999px; color: var(--accent); font-size: 0.68rem;
+  text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;
+}
+
+.tradeoff { margin: 0.4rem 0 0; color: var(--muted); font-size: 0.9rem; }
+
+.preview {
+  margin-top: 0.6rem; padding: 0.4rem; overflow-x: auto;
+  border-radius: 6px; background: var(--surface); font-size: 0.85rem;
+}
+
+.preview table { border-collapse: collapse; }
+.preview td, .preview th { padding: 0.2rem 0.45rem; border: 1px solid var(--line); }
+.withheld { margin: 0; color: var(--muted); font-size: 0.82rem; font-style: italic; }
+
+.q-note {
+  width: 100%; margin-top: 0.75rem; padding: 0.45rem 0.6rem;
+  border: 1px solid var(--line); border-radius: 8px;
+  background: var(--sunken); color: inherit; font: inherit; font-size: 0.9rem;
+}
+
+.defaults {
+  margin-top: 1.25rem; padding: 0.75rem 1rem; border: 1px solid var(--line);
+  border-radius: var(--radius); background: var(--surface);
+}
+
+.defaults summary { color: var(--muted); cursor: pointer; font-size: 0.9rem; }
+.default { margin-top: 0.75rem; padding: 0.75rem 0 0.25rem; border-top: 1px solid var(--line); }
+.default .assumption { margin: 0 0 0.25rem; }
+.default .rationale { margin: 0 0 0.5rem; color: var(--muted); font-size: 0.88rem; }
+.default.flipped { padding-left: 0.75rem; border-left: 3px solid var(--med); }
+
+.challenge {
+  padding: 0.3rem 0.65rem; border: 1px solid var(--line); border-radius: 999px;
+  background: var(--sunken); color: var(--muted); font: inherit;
+  font-size: 0.82rem; cursor: pointer;
+}
+
+.challenge:hover { border-color: var(--med); color: var(--med); }
+.default.flipped .challenge { border-color: var(--med); color: var(--med); }
+
+.default-note, .open-answer {
+  display: block; width: 100%; min-height: 4.5rem; margin-top: 0.6rem;
+  padding: 0.5rem 0.6rem; border: 1px solid var(--line); border-radius: 8px;
+  background: var(--sunken); color: inherit; font: inherit; font-size: 0.9rem;
+  resize: vertical;
+}
+
+.open { margin-top: 1.25rem; }
+.open h2 { color: var(--muted); font-size: 1rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.open-q { margin-bottom: 0.75rem; padding: 0.9rem 1rem; border: 1px dashed var(--line); border-radius: var(--radius); }
+.open-question { margin: 0; font-weight: 600; }
+.why-open { margin: 0.25rem 0 0; color: var(--muted); font-size: 0.88rem; }
+
+#submit-bar {
+  position: sticky; bottom: 0; z-index: 5;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem;
+  margin-top: 1.5rem; padding: 0.85rem 1rem;
+  border-top: 1px solid var(--line); border-radius: var(--radius) var(--radius) 0 0;
+  background: var(--surface);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  backdrop-filter: blur(10px); box-shadow: var(--shadow);
+}
+
+#submit-bar .progress { color: var(--muted); font-size: 0.9rem; font-variant-numeric: tabular-nums; }
+#submit-bar.complete .progress { color: var(--accent); font-weight: 600; }
+
+.submit {
+  margin-left: auto; padding: 0.55rem 1.2rem; border: 0; border-radius: 999px;
+  background: var(--accent); color: #fff; font: inherit; font-weight: 600;
+  cursor: pointer;
+}
+
+.submit:disabled { opacity: 0.55; cursor: progress; }
+.submit-error { flex-basis: 100%; margin: 0; color: var(--danger); font-size: 0.88rem; }
+
+.sent { max-width: 40rem; margin: 6rem auto; padding: 0 1.25rem; text-align: center; }
+.sent h1 { margin-bottom: 0.5rem; font-size: 1.4rem; }
+.sent-summary { color: var(--muted); }
+
+@media (max-width: 720px) {
+  #board { padding: 1.25rem 0.9rem 0; }
+  .options { grid-template-columns: 1fr; }
+  .submit { margin-left: 0; width: 100%; }
+}

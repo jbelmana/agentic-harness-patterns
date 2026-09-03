@@ -1,0 +1,8 @@
+# Gitleaks configuration.
+#
+# `useDefault = true` is load-bearing: a config file WITHOUT it replaces the
+# default rule set with nothing, so every scan that auto-discovers this file
+# reports "no leaks found" on any content whatsoever. Extend, never replace.
+# No allowlist: this tree has no planted fixtures, so any hit is real.
+[extend]
+useDefault = true

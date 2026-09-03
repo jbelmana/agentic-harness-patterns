@@ -1,0 +1,139 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.invalid/schemas/ballot.schema.json",
+  "title": "Ballot",
+  "description": "A decision ballot rendered as a local HTML board. This schema is the human-readable contract; server/validate.mjs is the enforcement. Keep the two in lockstep. Three rules cannot be expressed in draft-07 and live only in validate.mjs: (1) question ids must be unique across the questions array, (2) option ids must be unique within their question, and (3) each question may mark at most one option as recommended. All three are uniqueness or cardinality constraints over a single field, which draft-07 cannot state — uniqueItems compares whole objects, so two options sharing an id but differing in label would pass.",
+  "type": "object",
+  "required": ["meta", "questions"],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "description": "Identity and provenance of the ballot. repo is optional.",
+      "required": ["id", "title", "task", "rail", "created"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "description": "Slug identifying this ballot." },
+        "title": { "type": "string", "minLength": 1 },
+        "task": { "type": "string", "minLength": 1, "description": "What the ballot is blocking." },
+        "rail": {
+          "type": "string",
+          "enum": ["frontload", "spec", "gsd", "auto"],
+          "description": "Which workflow rail raised this ballot."
+        },
+        "repo": { "type": "string", "description": "Optional. Not required by validate.mjs." },
+        "created": { "type": "string", "minLength": 1, "description": "ISO timestamp." }
+      }
+    },
+    "questions": {
+      "type": "array",
+      "description": "Decisions put to the operator. May be empty only when custom_html is a non-empty string, and MUST be empty when it is — the two are mutually exclusive, enforced by the top-level not clause.",
+      "items": { "$ref": "#/definitions/question" }
+    },
+    "defaults": {
+      "type": "array",
+      "description": "Assumptions taken without asking. Optional; defaults to an empty array.",
+      "items": {
+        "type": "object",
+        "required": ["id", "assumption", "rationale"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "assumption": { "type": "string", "minLength": 1 },
+          "rationale": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "open": {
+      "type": "array",
+      "description": "Questions deliberately left unanswered. Optional; defaults to an empty array.",
+      "items": {
+        "type": "object",
+        "required": ["id", "question", "why_open"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "question": { "type": "string", "minLength": 1 },
+          "why_open": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "custom_html": {
+      "type": ["string", "null"],
+      "description": "Escape hatch for a board no question class covers. A non-empty string excuses an empty questions array and REPLACES it — a custom board does not augment a question set, it stands in for one."
+    }
+  },
+  "anyOf": [
+    {
+      "description": "Normal ballot: at least one question.",
+      "properties": { "questions": { "minItems": 1 } }
+    },
+    {
+      "description": "Custom board: no questions, but non-empty custom_html.",
+      "required": ["custom_html"],
+      "properties": { "custom_html": { "type": "string", "minLength": 1 } }
+    }
+  ],
+  "not": {
+    "description": "custom_html and a non-empty questions array are mutually exclusive. The board renders the custom branch and returns before building a single question card, so a ballot carrying both shows nothing answerable and still submits choice: null for every question. This inverted schema matches exactly the forbidden shape; the enforcement mirror is the `custom_html and questions are mutually exclusive` check in server/validate.mjs.",
+    "required": ["custom_html"],
+    "properties": {
+      "custom_html": { "type": "string", "minLength": 1 },
+      "questions": { "minItems": 1 }
+    }
+  },
+  "definitions": {
+    "question": {
+      "type": "object",
+      "description": "One decision. At most one option may set recommended: true — enforced in validate.mjs, not expressible here.",
+      "required": ["id", "class", "question", "blast_radius", "options"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Unique across the questions array — uniqueness enforced in validate.mjs."
+        },
+        "class": {
+          "type": "string",
+          "enum": ["scope", "irreversibility", "naming", "placement", "tradeoff",
+            "spend", "outward", "locked", "ceremony", "blast"]
+        },
+        "question": { "type": "string", "minLength": 1 },
+        "blast_radius": { "type": "string", "enum": ["high", "med", "low"] },
+        "multi": {
+          "type": "boolean",
+          "description": "Optional. Allows selecting more than one option."
+        },
+        "allow_note": {
+          "type": "boolean",
+          "description": "Optional. Renders a free-text note field alongside the options."
+        },
+        "gates": {
+          "type": "array",
+          "description": "Optional. Plan ids whose human gate this question discharges — e.g. [\"12-02\"]. Consumed by server/gate-check.mjs when validate.mjs is run with --phase-dir: every *-PLAN.md in the phase whose frontmatter carries autonomous: false, a checkpoint: key, or a non-AUTO gate: value must be named here by some question, or validation fails naming the plan. Lives on questions only — a gate 'represented' by a defaults entry is the documented failure mode.",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "options": {
+          "type": "array",
+          "minItems": 2,
+          "items": { "$ref": "#/definitions/option" }
+        }
+      }
+    },
+    "option": {
+      "type": "object",
+      "description": "One answer choice. ids must be unique within the owning question.",
+      "required": ["id", "label", "tradeoff"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "label": { "type": "string", "minLength": 1 },
+        "tradeoff": {
+          "type": "string",
+          "minLength": 1,
+          "description": "What this choice gives up. Required — an option with no stated cost is not a real choice."
+        },
+        "recommended": { "type": "boolean", "description": "Optional. At most one per question." },
+        "preview_html": {
+          "type": "string",
+          "description": "Optional inline HTML preview of the option's consequence."
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "meta": {
+    "id": "minimal-ballot",
+    "title": "Minimal ballot",
+    "task": "Validate the smallest legal ballot shape",
+    "rail": "frontload",
+    "repo": "example-app",
+    "created": "2026-08-26T00:00:00Z"
+  },
+  "questions": [
+    {
+      "id": "q-output-path",
+      "class": "placement",
+      "question": "Where should the rendered ballot HTML be written?",
+      "blast_radius": "low",
+      "multi": false,
+      "allow_note": true,
+      "options": [
+        {
+          "id": "o-tmp",
+          "label": "System temp directory",
+          "tradeoff": "Auto-cleaned by the OS, but the board vanishes between sessions.",
+          "recommended": true
+        },
+        {
+          "id": "o-repo",
+          "label": "Inside the repo under a scratch directory",
+          "tradeoff": "Survives restarts, but risks committing scratch HTML."
+        }
+      ]
+    }
+  ],
+  "defaults": [
+    {
+      "id": "d-port",
+      "assumption": "Serve the board on the first free port at or above 8700.",
+      "rationale": "Avoids collisions with dev servers already bound to 3000 and 5173."
+    }
+  ],
+  "open": [],
+  "custom_html": null
+}

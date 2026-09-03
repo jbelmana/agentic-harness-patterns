@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "id": "multi-ballot",
+    "title": "Multi-select ballot",
+    "task": "Exercise multi-select questions and option preview rendering",
+    "rail": "spec",
+    "repo": "example-app",
+    "created": "2026-08-26T00:00:00Z"
+  },
+  "questions": [
+    {
+      "id": "q-scope",
+      "class": "scope",
+      "question": "How much of the triage flow ships in the first cut?",
+      "blast_radius": "high",
+      "multi": false,
+      "allow_note": true,
+      "options": [
+        {
+          "id": "o-render-only",
+          "label": "Render the board only",
+          "tradeoff": "Ships in one task, but answers still have to be typed back by hand.",
+          "recommended": true
+        },
+        {
+          "id": "o-round-trip",
+          "label": "Render plus answer capture",
+          "tradeoff": "Complete loop, but needs a local server and a write path before anything is usable."
+        }
+      ]
+    },
+    {
+      "id": "q-packs",
+      "class": "blast",
+      "question": "Which surfaces may open a ballot board?",
+      "blast_radius": "med",
+      "multi": true,
+      "allow_note": true,
+      "options": [
+        {
+          "id": "o-frontload",
+          "label": "frontload",
+          "tradeoff": "The natural home for batched decisions, and already the busiest caller."
+        },
+        {
+          "id": "o-spec",
+          "label": "spec BALLOT mode",
+          "tradeoff": "Reuses an existing ballot vocabulary, but its questions are far longer."
+        },
+        {
+          "id": "o-auto",
+          "label": "auto pipeline pauses",
+          "tradeoff": "Highest leverage while unattended, but the session is gone by the time anyone answers."
+        }
+      ]
+    },
+    {
+      "id": "q-spend",
+      "class": "spend",
+      "question": "What hosting cost is acceptable for the board?",
+      "blast_radius": "low",
+      "multi": false,
+      "allow_note": false,
+      "options": [
+        {
+          "id": "o-local",
+          "label": "Local loopback server only",
+          "tradeoff": "Free and private, but unreachable from a phone.",
+          "recommended": true,
+          "preview_html": "<table><tr><td>$3/mo</td></tr></table>"
+        },
+        {
+          "id": "o-tunnel",
+          "label": "Tunnel the board to a public URL",
+          "tradeoff": "Answerable from anywhere, but exposes in-flight decisions to the open internet."
+        }
+      ]
+    }
+  ],
+  "defaults": [
+    {
+      "id": "d-theme",
+      "assumption": "The board follows the operating system light or dark setting.",
+      "rationale": "Matches every other local surface and needs no per-user configuration."
+    }
+  ],
+  "open": [
+    {
+      "id": "op-mobile",
+      "question": "Should the board be answerable from a phone?",
+      "why_open": "Depends on whether tunnelling is acceptable, which is itself still on this ballot."
+    }
+  ],
+  "custom_html": null
+}

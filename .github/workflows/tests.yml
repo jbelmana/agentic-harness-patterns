@@ -1,0 +1,68 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [22, 24]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      # Runtime prerequisites the tooling shells out to. jq and git ship on the
+      # runner image; ripgrep does not (relay-next emits `rg` acceptance commands).
+      - name: Install ripgrep
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ripgrep && rg --version | head -1
+
+      # macOS with core.filemode=false hides a missing exec bit; Linux does not.
+      # A check that inspects zero files fails — never passes.
+      - name: Every shebang file is executable
+        run: |
+          seen=0; bad=0
+          while IFS= read -r f; do
+            [ "$(head -c2 "$f")" = '#!' ] || continue
+            seen=$((seen + 1))
+            [ -x "$f" ] || { echo "missing exec bit: $f"; bad=1; }
+          done < <(git ls-files)
+          [ "$seen" -gt 0 ] || { echo "no shebang files inspected"; exit 1; }
+          exit $bad
+
+      - name: Shell syntax
+        run: for f in $(git ls-files '*.sh'); do bash -n "$f"; done
+
+      # The relay libs shipped once with their siblings missing; syntax checks passed.
+      - name: Relay entry points load
+        run: node -e "require('./hooks/lib/relay-chain.js'); require('./hooks/lib/relay-next.js')"
+
+      - name: Unit tests
+        run: node --test hooks/tests/*.test.js skills/ballot/tests/*.test.mjs
+
+  # Its own job, not a step in the matrix above: the history scan is identical on
+  # every Node version, and `fetch-depth: 0` is only needed here.
+  secret-scan:
+    runs-on: ubuntu-latest
+    # On pull_request events the action lists the PR's commits through the API;
+    # without pull-requests: read the token gets a 403 and the job fails before scanning.
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # gitleaks walks the full history, not just the tip
+
+      # Uses .gitleaks.toml at the repo root, which extends the default rule set
+      # and allowlists exactly one string: the fake key evals/run-evals.sh plants.
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_CONFIG: .gitleaks.toml

@@ -1,0 +1,57 @@
+{
+  "meta": {
+    "id": "dup-id-ballot",
+    "title": "Duplicate question ids",
+    "task": "Reject two questions that share an id",
+    "rail": "gsd",
+    "repo": "example-app",
+    "created": "2026-08-26T00:00:00Z"
+  },
+  "questions": [
+    {
+      "id": "x",
+      "class": "naming",
+      "question": "What should the skill be called?",
+      "blast_radius": "low",
+      "multi": false,
+      "allow_note": true,
+      "options": [
+        {
+          "id": "o-ballot",
+          "label": "ballot",
+          "tradeoff": "Short and already the vocabulary in spec, but overloads an existing term.",
+          "recommended": true
+        },
+        {
+          "id": "o-board",
+          "label": "decision-board",
+          "tradeoff": "Unambiguous, but longer to type and disconnected from the spec wording."
+        }
+      ]
+    },
+    {
+      "id": "x",
+      "class": "ceremony",
+      "question": "Does the board need a confirmation step before answers are written?",
+      "blast_radius": "med",
+      "multi": false,
+      "allow_note": true,
+      "options": [
+        {
+          "id": "o-confirm",
+          "label": "Confirm before writing",
+          "tradeoff": "Catches misclicks, but adds a step to every single pass."
+        },
+        {
+          "id": "o-immediate",
+          "label": "Write immediately",
+          "tradeoff": "Fastest path, but a stray click silently records a decision.",
+          "recommended": true
+        }
+      ]
+    }
+  ],
+  "defaults": [],
+  "open": [],
+  "custom_html": null
+}

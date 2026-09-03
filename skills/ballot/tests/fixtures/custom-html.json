@@ -1,0 +1,14 @@
+{
+  "meta": {
+    "id": "custom-html-ballot",
+    "title": "Custom HTML ballot",
+    "task": "Render an exotic board that no question class covers",
+    "rail": "auto",
+    "repo": "example-app",
+    "created": "2026-08-26T00:00:00Z"
+  },
+  "questions": [],
+  "defaults": [],
+  "open": [],
+  "custom_html": "<h2>Exotic</h2>"
+}
